@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <title>إصدار شهادة</title>
 
-<!-- pdf-lib -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-
-<!-- fontkit (مهم للعربي) -->
-<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.js"></script>
 
 <style>
 body {
@@ -65,59 +61,55 @@ button:hover {
 <script>
 async function generatePDF() {
 
-    try {
-        const name = document.getElementById("name").value;
+    const name = document.getElementById("name").value;
+    if (!name) return alert("اكتب الاسم");
 
-        if (!name) {
-            alert("اكتب اسم الطالب");
-            return;
-        }
+    // تحميل PDF
+    const existingPdfBytes = await fetch("template.pdf").then(res => res.arrayBuffer());
+    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+    const page = pdfDoc.getPages()[0];
 
-        // تحميل القالب
-        const pdfBytes = await fetch("template.pdf").then(res => res.arrayBuffer());
+    // 🎨 إنشاء Canvas لكتابة الاسم بالعربي بشكل صحيح
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-        // تحميل الخط العربي
-        const fontBytes = await fetch("Cairo-Regular.ttf").then(res => res.arrayBuffer());
+    canvas.width = 800;
+    canvas.height = 200;
 
-        // فتح PDF
-        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+    ctx.fillStyle = "black";
+    ctx.font = "40px Arial";
+    ctx.textAlign = "center";
+    ctx.direction = "rtl";
 
-        // تسجيل الخط
-        pdfDoc.registerFontkit(window.fontkit);
-        const customFont = await pdfDoc.embedFont(fontBytes);
+    ctx.fillText(name, canvas.width / 2, 100);
 
-        const page = pdfDoc.getPages()[0];
+    // تحويل إلى صورة
+    const imgData = canvas.toDataURL("image/png");
 
-        // ✨ عكس النص (حل بسيط للعربي)
-page.drawText(name, {
-        // كتابة الاسم
-        page.drawText(name, {
-    x: 380,   // ← البداية من اليمين
-    y: 355,
-    size: 26,
-    font: customFont
-});
+    // إدخال الصورة في PDF
+    const pngImage = await pdfDoc.embedPng(imgData);
 
-        // حفظ
-        const finalPdf = await pdfDoc.save();
+    page.drawImage(pngImage, {
+        x: 120,   // ← عدل هنا حسب مكان الاسم
+        y: 340,
+        width: 350,
+        height: 80
+    });
 
-        // تحميل
-        const blob = new Blob([finalPdf], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
+    const pdfBytes = await pdfDoc.save();
 
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "certificate.pdf";
-        document.body.appendChild(link);
-        link.click();
+    // تحميل
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
 
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "certificate.pdf";
+    document.body.appendChild(link);
+    link.click();
 
-    } catch (error) {
-        console.error(error);
-        alert("❌ تأكد من وجود الملفات (PDF + الخط)");
-    }
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 </script>
 
