@@ -89,15 +89,14 @@ async function generatePDF() {
         const page = pdfDoc.getPages()[0];
 
         // ✨ عكس النص (حل بسيط للعربي)
-        const reversedName = name.split("").reverse().join("");
-
+page.drawText(name, {
         // كتابة الاسم
-        page.drawText(reversedName, {
-            x: 220,   // ← عدل حسب موقع الاسم
-            y: 360,
-            size: 26,
-            font: customFont
-        });
+        page.drawText(name, {
+    x: 380,   // ← البداية من اليمين
+    y: 355,
+    size: 26,
+    font: customFont
+});
 
         // حفظ
         const finalPdf = await pdfDoc.save();
