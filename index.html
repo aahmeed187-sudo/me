@@ -2,73 +2,75 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>منصة الشهادات الاحترافية</title>
+    <title>مولد شهادات الفيكتور الأصلي</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4/dist/fontkit.umd.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        input { padding: 12px; font-size: 18px; width: 300px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; text-align: center; }
-        button { padding: 12px 25px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
-        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; margin-top: 10px; }
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f8f9fa; padding: 50px; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); display: inline-block; }
+        input { padding: 15px; width: 300px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        button { padding: 15px 30px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        button:disabled { background-color: #bdc3c7; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>إصدار شهادة التفوق</h2>
+    <div class="box">
+        <h2>إصدار شهادة (Vector PDF)</h2>
+        <p>الشهادة ستحمل بجودة الطباعة الأصلية دون أي بكسلة</p>
         <input type="text" id="nameInput" placeholder="اكتب اسم الطالب هنا...">
         <br>
-        <button onclick="downloadPDF()">تحميل PDF بجودة عالية</button>
-        <br>
-        <canvas id="certCanvas"></canvas>
+        <button id="downloadBtn" onclick="generatePDF()">تحميل الشهادة PDF</button>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <script>
-        const canvas = document.getElementById('certCanvas');
-        const ctx = canvas.getContext('2d');
-        const nameInput = document.getElementById('nameInput');
-        const svgImg = new Image();
+        async function generatePDF() {
+            const name = document.getElementById('nameInput').value;
+            if (!name) return alert("الرجاء كتابة الاسم");
 
-        // تأكد أن هذا الاسم مطابق تماماً لملفك في GitHub
-        svgImg.src = 'certificate.svg'; 
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.innerText = "جاري المعالجة...";
 
-        svgImg.onload = function() {
-            // سنضبط الكانفاس ليكون كبيراً جداً (مثلاً 2000 بكسل عرض) لضمان عدم البكسلة
-            const scaleFactor = 2; 
-            canvas.width = 1200 * scaleFactor; 
-            canvas.height = 850 * scaleFactor;
-            ctx.scale(scaleFactor, scaleFactor);
-            draw();
-        };
+            try {
+                // 1. تحميل ملف الـ PDF الأصلي (القالب)
+                const existingPdfBytes = await fetch('template.pdf').then(res => res.arrayBuffer());
 
-        function draw() {
-            // تنظيف الكانفاس ورسم الصورة
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(svgImg, 0, 0, 1200, 850);
-            
-            // إعدادات الخط لضمان الظهور
-            ctx.fillStyle = "#1a1a1a"; // لون أسود صريح
-            ctx.font = "bold 45px Arial"; // حجم كبير وواضح
-            ctx.textAlign = "center";
-            
-            // تعديل مكان الاسم بناءً على صورتك الأخيرة
-            // 600 هو المنتصف عرضياً، 580 هو الارتفاع (جرب تغيير هذا الرقم)
-            ctx.fillText(nameInput.value, 600, 580); 
-        }
+                // 2. تحميل المكتبة والملف
+                const { PDFDocument, rgb } = PDFLib;
+                const pdfDoc = await PDFDocument.load(existingPdfBytes);
+                
+                // تسجيل fontkit لتعامل أفضل مع الخطوط (اختياري إذا استخدمت خطوط النظام)
+                pdfDoc.registerFontkit(fontkit);
 
-        nameInput.addEventListener('input', draw);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+                const { width, height } = firstPage.getSize();
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'px',
-                format: [1200, 850]
-            });
-            const imgData = canvas.toDataURL('image/png', 1.0);
-            doc.addImage(imgData, 'PNG', 0, 0, 1200, 850);
-            doc.save('certificate.pdf');
+                // 3. إضافة الاسم (الإحداثيات تعتمد على حجم ملفك الـ PDF)
+                // في الـ PDF الإحداثيات تبدأ من الأسفل لليسار
+                firstPage.drawText(name, {
+                    x: width / 2 - (name.length * 5), // محاولة توسيط تقريبية
+                    y: 265, // الارتفاع (عدل هذا الرقم ليناسب مكان الاسم في ملفك)
+                    size: 35,
+                    color: rgb(0.1, 0.1, 0.1),
+                });
+
+                // 4. حفظ وتحميل الملف
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `شهادة_${name}.pdf`;
+                link.click();
+
+            } catch (error) {
+                console.error(error);
+                alert("حدث خطأ أثناء تحميل القالب. تأكد من وجود ملف template.pdf");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "تحميل الشهادة PDF";
+            }
         }
     </script>
 </body>
