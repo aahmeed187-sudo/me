@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <title>إصدار شهادة</title>
 
-<!-- مكتبة PDF -->
+<!-- pdf-lib -->
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+<!-- fontkit (مهم للعربي) -->
+<script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.js"></script>
 
 <style>
 body {
@@ -19,7 +22,7 @@ body {
     background: white;
     padding: 30px;
     border-radius: 10px;
-    width: 300px;
+    width: 320px;
     margin: auto;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
@@ -70,32 +73,37 @@ async function generatePDF() {
             return;
         }
 
-        // تحميل ملف القالب
-        const response = await fetch("template.pdf");
+        // تحميل القالب
+        const pdfBytes = await fetch("template.pdf").then(res => res.arrayBuffer());
 
-        if (!response.ok) {
-            alert("❌ ملف template.pdf غير موجود");
-            return;
-        }
-
-        const existingPdfBytes = await response.arrayBuffer();
+        // تحميل الخط العربي
+        const fontBytes = await fetch("Cairo-Regular.ttf").then(res => res.arrayBuffer());
 
         // فتح PDF
-        const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+        // تسجيل الخط
+        pdfDoc.registerFontkit(window.fontkit);
+        const customFont = await pdfDoc.embedFont(fontBytes);
+
         const page = pdfDoc.getPages()[0];
 
-        // ✨ كتابة الاسم
-        page.drawText(name, {
-            x: 220,   // ← عدلها لو احتجت
-            y: 360,   // ← مكان الاسم
-            size: 26
+        // ✨ عكس النص (حل بسيط للعربي)
+        const reversedName = name.split("").reverse().join("");
+
+        // كتابة الاسم
+        page.drawText(reversedName, {
+            x: 220,   // ← عدل حسب موقع الاسم
+            y: 360,
+            size: 26,
+            font: customFont
         });
 
-        // حفظ PDF
-        const pdfBytes = await pdfDoc.save();
+        // حفظ
+        const finalPdf = await pdfDoc.save();
 
-        // تحميل الملف
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        // تحميل
+        const blob = new Blob([finalPdf], { type: "application/pdf" });
         const url = URL.createObjectURL(blob);
 
         const link = document.createElement("a");
@@ -109,7 +117,7 @@ async function generatePDF() {
 
     } catch (error) {
         console.error(error);
-        alert("❌ صار خطأ - افتح F12 وشوف Console");
+        alert("❌ تأكد من وجود الملفات (PDF + الخط)");
     }
 }
 </script>
