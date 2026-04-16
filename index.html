@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>شهادة PDF</title>
+<title>إصدار شهادة</title>
 
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 
@@ -24,7 +24,7 @@ input, button {
 
 <h2>إصدار شهادة</h2>
 
-<input type="text" id="name" placeholder="اكتب اسمك">
+<input type="text" id="name" placeholder="اكتب اسم الطالب">
 <br>
 <button onclick="generatePDF()">تحميل الشهادة</button>
 
@@ -32,25 +32,23 @@ input, button {
 async function generatePDF() {
 
     const name = document.getElementById("name").value;
-    if (!name) return alert("اكتب اسمك");
+    if (!name) return alert("اكتب الاسم");
 
-    // تحميل ملف PDF القالب
-    const existingPdfBytes = await fetch('certificate.pdf').then(res => res.arrayBuffer());
+    const existingPdfBytes = await fetch('template.pdf').then(res => res.arrayBuffer());
 
     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
     const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
+    const page = pages[0];
 
-    // كتابة الاسم (غير المكان حسب تصميمك)
-    firstPage.drawText(name, {
-        x: 200,
-        y: 300,
-        size: 24
+    // ✨ كتابة الاسم (مضبوط تقريبًا حسب قالبك)
+    page.drawText(name, {
+        x: 220,  // ← عدلها إذا احتجت
+        y: 360,  // ← هذا مكان الاسم تحت "الطالب:-"
+        size: 26
     });
 
     const pdfBytes = await pdfDoc.save();
 
-    // تحميل الملف
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
