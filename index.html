@@ -1,46 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>إصدار شهادة</title>
+
+<!-- مكتبة PDF -->
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    margin-top: 60px;
+    background: #f5f5f5;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 300px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-top: 15px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+    <h2>إصدار شهادة</h2>
+
+    <input type="text" id="name" placeholder="اكتب اسم الطالب">
+
+    <br>
+    <button onclick="generatePDF()">تحميل الشهادة</button>
+</div>
+
 <script>
 async function generatePDF() {
 
     try {
         const name = document.getElementById("name").value;
-        if (!name) return alert("اكتب الاسم");
 
-        const existingPdfBytes = await fetch('template.pdf');
-        
-        if (!existingPdfBytes.ok) {
-            alert("ملف الشهادة غير موجود!");
+        if (!name) {
+            alert("اكتب اسم الطالب");
             return;
         }
 
-        const pdfBytesArray = await existingPdfBytes.arrayBuffer();
+        // تحميل ملف القالب
+        const response = await fetch("template.pdf");
 
-        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytesArray);
+        if (!response.ok) {
+            alert("❌ ملف template.pdf غير موجود");
+            return;
+        }
+
+        const existingPdfBytes = await response.arrayBuffer();
+
+        // فتح PDF
+        const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
         const page = pdfDoc.getPages()[0];
 
+        // ✨ كتابة الاسم
         page.drawText(name, {
-            x: 220,
-            y: 360,
+            x: 220,   // ← عدلها لو احتجت
+            y: 360,   // ← مكان الاسم
             size: 26
         });
 
+        // حفظ PDF
         const pdfBytes = await pdfDoc.save();
 
-        // ✅ تحميل بطريقة مضمونة
+        // تحميل الملف
         const blob = new Blob([pdfBytes], { type: "application/pdf" });
         const url = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "certificate.pdf";
-        document.body.appendChild(a);
-        a.click();
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "certificate.pdf";
+        document.body.appendChild(link);
+        link.click();
 
-        document.body.removeChild(a);
+        document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
     } catch (error) {
         console.error(error);
-        alert("صار خطأ، افتح F12 وشوف Console");
+        alert("❌ صار خطأ - افتح F12 وشوف Console");
     }
 }
 </script>
+
+</body>
+</html>
