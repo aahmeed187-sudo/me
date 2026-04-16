@@ -1,82 +1,44 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>منصة الشهادات - جودة فيكتور</title>
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background: #f4f7f6; padding: 50px; }
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: inline-block; }
-        input { padding: 15px; width: 350px; font-size: 20px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 20px; text-align: center; outline: none; }
-        input:focus { border-color: #27ae60; }
-        button { padding: 15px 35px; background: #27ae60; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
-        button:hover { background: #219150; }
-        #status { margin-top: 15px; color: #7f8c8d; font-size: 14px; }
-    </style>
-</head>
-<body>
+async function generatePDF() {
+    const name = document.getElementById('nameInput').value;
+    const status = document.getElementById('status');
+    if (!name) return alert("لطفاً، اكتب الاسم");
 
-    <div class="card">
-        <h2>منصة طباعة الشهادات الفاخرة</h2>
-        <input type="text" id="nameInput" placeholder="أدخل اسم الطالب المبدع...">
-        <br>
-        <button id="downloadBtn" onclick="generatePDF()">تحميل الشهادة PDF (فيكتور)</button>
-        <div id="status"></div>
-    </div>
+    status.innerText = "جاري الاتصال بالقالب...";
+    
+    // سنحاول جلب الملف بأكثر من صيغة للاحتياط
+    const filenames = ['template.pdf', 'Template.pdf', 'TEMPLATE.PDF'];
+    let response;
 
-    <script>
-        async function generatePDF() {
-            const name = document.getElementById('nameInput').value;
-            const status = document.getElementById('status');
-            const btn = document.getElementById('downloadBtn');
+    for (let file of filenames) {
+        response = await fetch(file + '?v=' + Math.random());
+        if (response.ok) break; 
+    }
 
-            if (!name) {
-                alert("لطفاً، اكتب الاسم أولاً");
-                return;
-            }
+    if (!response.ok) {
+        status.innerText = "خطأ: لم نجد ملف template.pdf. تأكد من تطابق اسم الملف.";
+        return;
+    }
 
-            btn.disabled = true;
-            status.innerText = "جاري الاتصال بالقالب الصادر من إليستريتور...";
+    const existingPdfBytes = await response.arrayBuffer();
+    const { PDFDocument, rgb } = PDFLib;
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
 
-            try {
-                // إضافة رقم عشوائي بعد اسم الملف لمنع المتصفح من قراءة النسخة القديمة (Cache busting)
-                const url = 'template.pdf?v=' + Math.random();
-                const existingPdfBytes = await fetch(url).then(res => {
-                    if (!res.ok) throw new Error('الملف غير موجود على السيرفر');
-                    return res.arrayBuffer();
-                });
+    // إحداثيات الاسم الدقيقة لتصميمك الأخير
+    firstPage.drawText(name, {
+        x: (width / 2) - (name.length * 4.5), // توسيط الاسم
+        y: height - 565, // هذا الرقم سيضعه تماماً فوق سطر "الطالب/ـة"
+        size: 28,
+        color: rgb(0, 0, 0),
+    });
 
-                const { PDFDocument, rgb } = PDFLib;
-                const pdfDoc = await PDFDocument.load(existingPdfBytes);
-                const pages = pdfDoc.getPages();
-                const firstPage = pages[0];
-                const { width, height } = firstPage.getSize();
-
-                // إحداثيات الاسم (تم ضبطها لتناسب تصميمك الجديد)
-                // x: المنتصف، y: فوق السطر المخصص للاسم
-                firstPage.drawText(name, {
-                    x: (width / 2) - (name.length * 4), 
-                    y: 285, 
-                    size: 30,
-                    color: rgb(0.1, 0.1, 0.1),
-                });
-
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `شهادة_تفوق_${name}.pdf`;
-                link.click();
-                
-                status.innerText = "تم التحميل بنجاح!";
-            } catch (error) {
-                console.error(error);
-                status.innerText = "خطأ: تأكد من رفع ملف template.pdf بجانب هذا الملف";
-                alert("حدث خطأ، يرجى التأكد من رفع ملف template.pdf");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-    </script>
-</body>
-</html>
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `شهادة_${name}.pdf`;
+    link.click();
+    status.innerText = "تم التحميل!";
+}
