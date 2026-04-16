@@ -1,61 +1,46 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-<meta charset="UTF-8">
-<title>إصدار شهادة</title>
-
-<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-
-<style>
-body {
-    text-align: center;
-    font-family: Arial;
-    margin-top: 50px;
-}
-input, button {
-    padding: 10px;
-    font-size: 16px;
-    margin: 10px;
-}
-</style>
-
-</head>
-<body>
-
-<h2>إصدار شهادة</h2>
-
-<input type="text" id="name" placeholder="اكتب اسم الطالب">
-<br>
-<button onclick="generatePDF()">تحميل الشهادة</button>
-
 <script>
 async function generatePDF() {
 
-    const name = document.getElementById("name").value;
-    if (!name) return alert("اكتب الاسم");
+    try {
+        const name = document.getElementById("name").value;
+        if (!name) return alert("اكتب الاسم");
 
-    const existingPdfBytes = await fetch('template.pdf').then(res => res.arrayBuffer());
+        const existingPdfBytes = await fetch('template.pdf');
+        
+        if (!existingPdfBytes.ok) {
+            alert("ملف الشهادة غير موجود!");
+            return;
+        }
 
-    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const page = pages[0];
+        const pdfBytesArray = await existingPdfBytes.arrayBuffer();
 
-    // ✨ كتابة الاسم (مضبوط تقريبًا حسب قالبك)
-    page.drawText(name, {
-        x: 220,  // ← عدلها إذا احتجت
-        y: 360,  // ← هذا مكان الاسم تحت "الطالب:-"
-        size: 26
-    });
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytesArray);
+        const page = pdfDoc.getPages()[0];
 
-    const pdfBytes = await pdfDoc.save();
+        page.drawText(name, {
+            x: 220,
+            y: 360,
+            size: 26
+        });
 
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'certificate.pdf';
-    link.click();
+        const pdfBytes = await pdfDoc.save();
+
+        // ✅ تحميل بطريقة مضمونة
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "certificate.pdf";
+        document.body.appendChild(a);
+        a.click();
+
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error(error);
+        alert("صار خطأ، افتح F12 وشوف Console");
+    }
 }
 </script>
-
-</body>
-</html>
