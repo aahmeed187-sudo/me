@@ -90,10 +90,10 @@ async function generatePDF() {
     const pngImage = await pdfDoc.embedPng(imgData);
 
     page.drawImage(pngImage, {
-        x: 420.9449 px,   // ← عدل هنا حسب مكان الاسم
-        y: 366.0184 px,
-        width: 294.4746 px,
-        height: 43.2965 px
+        x: 420.9449px,   // ← عدل هنا حسب مكان الاسم
+        y: 366.0184px,
+        width: 294.4746px,
+        height: 43.2965px
     });
 
     const pdfBytes = await pdfDoc.save();
