@@ -90,8 +90,8 @@ async function generatePDF() {
     const pngImage = await pdfDoc.embedPng(imgData);
 
     page.drawImage(pngImage, {
-        x: 120,   // ← عدل هنا حسب مكان الاسم
-        y: 340,
+        x: 500,   // ← عدل هنا حسب مكان الاسم
+        y: 605,
         width: 350,
         height: 80
     });
