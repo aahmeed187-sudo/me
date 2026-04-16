@@ -2,166 +2,71 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة إصدار الشهادات | إعداد الأستاذ أحمد</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Amiri:wght@700&display=swap" rel="stylesheet">
-    
+    <title>مولد شهادات الفيكتور</title>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #c0392b;
-            --bg-color: #f8f9fa;
-        }
-
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--primary-color);
-        }
-
-        .header {
-            background: var(--primary-color);
-            color: white;
-            width: 100%;
-            padding: 20px 0;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .container {
-            max-width: 900px;
-            width: 90%;
-            margin: 30px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .input-group {
-            margin-bottom: 25px;
-        }
-
-        input[type="text"] {
-            padding: 15px;
-            width: 80%;
-            max-width: 400px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 18px;
-            font-family: 'Tajawal', sans-serif;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--accent-color);
-        }
-
-        .btn-download {
-            background-color: var(--accent-color);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn-download:hover {
-            transform: scale(1.05);
-            background-color: #a93226;
-        }
-
-        #canvasContainer {
-            margin-top: 20px;
-            position: relative;
-            overflow: auto;
-            border: 1px solid #eee;
-            border-radius: 10px;
-        }
-
-        canvas {
-            max-width: 100%;
-            height: auto;
-        }
-
-        footer {
-            margin-top: 40px;
-            padding: 20px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; }
+        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; margin-top: 20px; border-radius: 8px; }
+        input { padding: 12px; font-size: 18px; width: 300px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; outline: none; }
+        input:focus { border-color: #27ae60; }
+        button { padding: 12px 25px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #219150; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>منصة إصدار شهادات المعرض الفني</h1>
-        <p>بإشراف الأستاذ: أحمد الحربي</p>
-    </div>
-
     <div class="container">
-        <h3>أدخل الاسم المراد ظهوره في الشهادة</h3>
-        <div class="input-group">
-            <input type="text" id="userName" placeholder="اكتب اسم الطالب/ـة هنا..." autocomplete="off">
-        </div>
-
-        <div id="canvasContainer">
-            <canvas id="certCanvas" width="1200" height="850"></canvas>
-        </div>
-
-        <button class="btn-download" onclick="downloadCert()">تحميل الشهادة بجودة عالية (PNG)</button>
+        <h2>إصدار شهادة تفوق (SVG)</h2>
+        <input type="text" id="nameInput" placeholder="أدخل اسم الطالب المبدع...">
+        <br>
+        <button onclick="downloadPDF()">تحميل الشهادة PDF</button>
+        <br>
+        <canvas id="certCanvas"></canvas>
     </div>
 
-    <footer>
-        جميع الحقوق محفوظة &copy; 2026 - مدرسة إمام يعقوب بن إسحاق الحضرمي
-    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         const canvas = document.getElementById('certCanvas');
         const ctx = canvas.getContext('2d');
-        const nameInput = document.getElementById('userName');
+        const nameInput = document.getElementById('nameInput');
 
-        // تحميل صورة الشهادة
-        const bgImage = new Image();
-        bgImage.src = 'certificate.png'; // يجب أن يكون اسم ملف الصورة مطابقاً لهذا الاسم في المجلد
+        const svgImg = new Image();
+        svgImg.src = 'certificate.svg'; // تأكد من رفع الملف بهذا الاسم
 
-        bgImage.onload = () => {
-            renderCertificate('');
+        svgImg.onload = function() {
+            // ضبط أبعاد الكانفاس لتطابق أبعاد الفيكتور الأصلية
+            canvas.width = svgImg.width || 1024; 
+            canvas.height = svgImg.height || 731;
+            draw();
         };
 
-        function renderCertificate(name) {
-            // رسم الخلفية
-            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-
-            // إعدادات النص
-            ctx.fillStyle = '#2c3e50'; // لون الاسم (عدله ليناسب تصميمك)
-            ctx.font = 'bold 60px "Amiri"'; // الخط الأميري يناسب الشهادات
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(svgImg, 0, 0, canvas.width, canvas.height);
+            
+            // إعدادات الخط (عدل الأرقام لتناسب مكان الاسم)
+            ctx.font = 'bold 45px Arial'; // يمكنك تغيير Arial لأي خط عربي بالنظام
+            ctx.fillStyle = '#1a1a1a';
             ctx.textAlign = 'center';
-
-            // موقع النص (هنا تحتاج لتجربة الأرقام 600 و 450 لتناسب مكان الاسم في تصميمك)
-            ctx.fillText(name, 500, 605);
+            
+            // الإحداثيات التي استخرجناها لصورتك (500 عرض، 605 ارتفاع)
+            ctx.fillText(nameInput.value, 512, 605);
         }
 
-        // تحديث لحظي عند الكتابة
-        nameInput.addEventListener('input', (e) => {
-            renderCertificate(e.target.value);
-        });
+        nameInput.addEventListener('input', draw);
 
-        // وظيفة التحميل
-        function downloadCert() {
-            const link = document.createElement('a');
-            link.download = `شهادة-${nameInput.value || 'مشارك'}.png`;
-            link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            doc.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            doc.save(`شهادة_${nameInput.value}.pdf`);
         }
     </script>
 </body>
