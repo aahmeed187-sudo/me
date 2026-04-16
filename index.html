@@ -2,24 +2,29 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مولد شهادات الفيكتور</title>
+    <title>منصة الشهادات عالية الجودة</title>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; }
-        canvas { border: 1px solid #ccc; max-width: 100%; height: auto; margin-top: 20px; border-radius: 8px; }
-        input { padding: 12px; font-size: 18px; width: 300px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; outline: none; }
-        input:focus { border-color: #27ae60; }
-        button { padding: 12px 25px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background-color: #219150; }
+        body { font-family: 'Tajawal', sans-serif; text-align: center; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: inline-block; }
+        canvas { 
+            border: 1px solid #eee; 
+            max-width: 100%; 
+            height: auto; 
+            margin-top: 20px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        input { padding: 15px; font-size: 18px; width: 350px; border: 2px solid #e0e0e0; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        button { padding: 15px 30px; background-color: #16a085; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #1abc9c; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>إصدار شهادة تفوق (SVG)</h2>
-        <input type="text" id="nameInput" placeholder="أدخل اسم الطالب المبدع...">
+        <h2 style="color: #2c3e50;">إصدار شهادة التفوق</h2>
+        <input type="text" id="nameInput" placeholder="اكتب اسم المبدع هنا...">
         <br>
-        <button onclick="downloadPDF()">تحميل الشهادة PDF</button>
+        <button onclick="downloadPDF()">حفظ الشهادة PDF بجودة عالية</button>
         <br>
         <canvas id="certCanvas"></canvas>
     </div>
@@ -30,43 +35,55 @@
         const canvas = document.getElementById('certCanvas');
         const ctx = canvas.getContext('2d');
         const nameInput = document.getElementById('nameInput');
-
         const svgImg = new Image();
-        svgImg.src = 'certificate.svg'; // تأكد من رفع الملف بهذا الاسم
+
+        // ارفع ملف الـ SVG بجانب ملف الـ HTML
+        svgImg.src = 'certificate.svg'; 
 
         svgImg.onload = function() {
-            // ضبط أبعاد الكانفاس لتطابق أبعاد الفيكتور الأصلية
-            canvas.width = svgImg.width || 1024; 
-            canvas.height = svgImg.height || 731;
+            // رفع الدقة بمقدار مرتين لضمان عدم البكسلة
+            const scale = 2; 
+            canvas.width = (svgImg.width || 1024) * scale;
+            canvas.height = (svgImg.height || 731) * scale;
+            
+            // تحسين جودة الرسم
+            ctx.scale(scale, scale);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
             draw();
         };
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(svgImg, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(svgImg, 0, 0, (canvas.width/2), (canvas.height/2));
             
-            // إعدادات الخط (عدل الأرقام لتناسب مكان الاسم)
-            ctx.font = 'bold 45px Arial'; // يمكنك تغيير Arial لأي خط عربي بالنظام
+            // إعدادات الخط الاحترافية
+            ctx.font = 'bold 38px "Arial"'; 
             ctx.fillStyle = '#1a1a1a';
             ctx.textAlign = 'center';
             
-            // الإحداثيات التي استخرجناها لصورتك (500 عرض، 605 ارتفاع)
-            ctx.fillText(nameInput.value, 512, 605);
+            // الإحداثيات (تم ضبطها لتناسب الشهادة في الصورة)
+            // العرض: 512 (منتصف الـ 1024)
+            // الارتفاع: تم تعديله ليناسب السطر في الصورة الجديدة
+            ctx.fillText(nameInput.value, 512, 600);
         }
 
         nameInput.addEventListener('input', draw);
 
         async function downloadPDF() {
             const { jsPDF } = window.jspdf;
+            // استخدام حجم مخصص للـ PDF يطابق أبعاد الكانفاس الأصلية
             const doc = new jsPDF({
                 orientation: 'landscape',
                 unit: 'px',
-                format: [canvas.width, canvas.height]
+                format: [canvas.width / 2, canvas.height / 2]
             });
 
+            // جلب البيانات بأقصى جودة ممكنة
             const imgData = canvas.toDataURL('image/png', 1.0);
-            doc.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-            doc.save(`شهادة_${nameInput.value}.pdf`);
+            doc.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+            doc.save(`شهادة_تفوق_${nameInput.value}.pdf`);
         }
     </script>
 </body>
