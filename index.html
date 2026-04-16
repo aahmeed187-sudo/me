@@ -2,74 +2,79 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مولد شهادات الفيكتور الأصلي</title>
+    <title>منصة الشهادات - جودة فيكتور</title>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4/dist/fontkit.umd.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f8f9fa; padding: 50px; }
-        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); display: inline-block; }
-        input { padding: 15px; width: 300px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        button { padding: 15px 30px; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
-        button:disabled { background-color: #bdc3c7; }
+        body { font-family: 'Arial', sans-serif; text-align: center; background: #f4f7f6; padding: 50px; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: inline-block; }
+        input { padding: 15px; width: 350px; font-size: 20px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 20px; text-align: center; outline: none; }
+        input:focus { border-color: #27ae60; }
+        button { padding: 15px 35px; background: #27ae60; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        button:hover { background: #219150; }
+        #status { margin-top: 15px; color: #7f8c8d; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>إصدار شهادة (Vector PDF)</h2>
-        <p>الشهادة ستحمل بجودة الطباعة الأصلية دون أي بكسلة</p>
-        <input type="text" id="nameInput" placeholder="اكتب اسم الطالب هنا...">
+    <div class="card">
+        <h2>منصة طباعة الشهادات الفاخرة</h2>
+        <input type="text" id="nameInput" placeholder="أدخل اسم الطالب المبدع...">
         <br>
-        <button id="downloadBtn" onclick="generatePDF()">تحميل الشهادة PDF</button>
+        <button id="downloadBtn" onclick="generatePDF()">تحميل الشهادة PDF (فيكتور)</button>
+        <div id="status"></div>
     </div>
 
     <script>
         async function generatePDF() {
             const name = document.getElementById('nameInput').value;
-            if (!name) return alert("الرجاء كتابة الاسم");
-
+            const status = document.getElementById('status');
             const btn = document.getElementById('downloadBtn');
+
+            if (!name) {
+                alert("لطفاً، اكتب الاسم أولاً");
+                return;
+            }
+
             btn.disabled = true;
-            btn.innerText = "جاري المعالجة...";
+            status.innerText = "جاري الاتصال بالقالب الصادر من إليستريتور...";
 
             try {
-                // 1. تحميل ملف الـ PDF الأصلي (القالب)
-                const existingPdfBytes = await fetch('template.pdf').then(res => res.arrayBuffer());
+                // إضافة رقم عشوائي بعد اسم الملف لمنع المتصفح من قراءة النسخة القديمة (Cache busting)
+                const url = 'template.pdf?v=' + Math.random();
+                const existingPdfBytes = await fetch(url).then(res => {
+                    if (!res.ok) throw new Error('الملف غير موجود على السيرفر');
+                    return res.arrayBuffer();
+                });
 
-                // 2. تحميل المكتبة والملف
                 const { PDFDocument, rgb } = PDFLib;
                 const pdfDoc = await PDFDocument.load(existingPdfBytes);
-                
-                // تسجيل fontkit لتعامل أفضل مع الخطوط (اختياري إذا استخدمت خطوط النظام)
-                pdfDoc.registerFontkit(fontkit);
-
                 const pages = pdfDoc.getPages();
                 const firstPage = pages[0];
                 const { width, height } = firstPage.getSize();
 
-                // 3. إضافة الاسم (الإحداثيات تعتمد على حجم ملفك الـ PDF)
-                // في الـ PDF الإحداثيات تبدأ من الأسفل لليسار
+                // إحداثيات الاسم (تم ضبطها لتناسب تصميمك الجديد)
+                // x: المنتصف، y: فوق السطر المخصص للاسم
                 firstPage.drawText(name, {
-                    x: width / 2 - (name.length * 5), // محاولة توسيط تقريبية
-                    y: 265, // الارتفاع (عدل هذا الرقم ليناسب مكان الاسم في ملفك)
-                    size: 35,
+                    x: (width / 2) - (name.length * 4), 
+                    y: 285, 
+                    size: 30,
                     color: rgb(0.1, 0.1, 0.1),
                 });
 
-                // 4. حفظ وتحميل الملف
                 const pdfBytes = await pdfDoc.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `شهادة_${name}.pdf`;
+                link.download = `شهادة_تفوق_${name}.pdf`;
                 link.click();
-
+                
+                status.innerText = "تم التحميل بنجاح!";
             } catch (error) {
                 console.error(error);
-                alert("حدث خطأ أثناء تحميل القالب. تأكد من وجود ملف template.pdf");
+                status.innerText = "خطأ: تأكد من رفع ملف template.pdf بجانب هذا الملف";
+                alert("حدث خطأ، يرجى التأكد من رفع ملف template.pdf");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "تحميل الشهادة PDF";
             }
         }
     </script>
